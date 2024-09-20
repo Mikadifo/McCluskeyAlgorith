@@ -1,13 +1,13 @@
 const { read, binary, getDifferentBit } = require("./util.js");
 
 const pairUp = (groups) => {
-  const pairGroups = [];
+  const newGroups = [];
   //[ [{pair: "0,1", binary: "000-"}] ]
 
   for (let i = 0; i < groups.length - 1; i++) {
+    const pairGroups = [];
     for (let j = 0; j < groups[i].length; j++) {
       const pairs = [];
-
       for (let k = 0; k < groups[i + 1].length; k++) {
         const bitPosition = getDifferentBit(
           groups[i][j].min.binary,
@@ -24,18 +24,12 @@ const pairUp = (groups) => {
         }
       }
 
-      pairGroups.push(pairs);
-      //{ ones: 0, min: { minterm: 0, binary: '0000' } }
-      //[
-      //{ ones: 1, min: { minterm: 1, binary: '0001' } },
-      //{ ones: 1, min: { minterm: 2, binary: '0010' } },
-      //{ ones: 1, min: { minterm: 4, binary: '0100' } },
-      //{ ones: 1, min: { minterm: 8, binary: '1000' } }
-      //]
+      pairGroups.push(...pairs);
     }
+    newGroups.push(pairGroups);
   }
 
-  console.log(pairGroups);
+  console.log(newGroups);
 };
 
 const group = (variables, minterms) => {
