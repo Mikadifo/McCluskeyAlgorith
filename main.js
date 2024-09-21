@@ -1,6 +1,9 @@
 const { read, binary, getDifferentBit } = require("./util.js");
 
 const pairUp = (groups, lastGroups = []) => {
+  console.log("PAIRS");
+  console.log(JSON.stringify(groups, null, 2));
+
   let newGroups = [];
 
   for (let i = 0; i < groups.length - 1; i++) {
