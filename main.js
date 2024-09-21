@@ -1,4 +1,21 @@
+const exp = require("constants");
 const { read, binary, getDifferentBit } = require("./util.js");
+
+const findEssentialImplicants = (groups, minterms) => {
+  const essentials = new Set();
+
+  for (let minterm of minterms) {
+    const implicants = groups.filter((group) =>
+      group.minterm.includes(minterm)
+    );
+
+    if (implicants.length === 1) {
+      essentials.add(implicants[0].binary);
+    }
+  }
+
+  return essentials;
+};
 
 const pairUp = (groups, lastGroups = []) => {
   console.log("PAIRS");
@@ -109,27 +126,31 @@ const group = (variables, minterms) => {
       const groups = group(variables, minterms);
       const newGroups = pairUp(groups);
 
-      for (let i = 0; i < newGroups.length; i++) {
-        newGroups[i] = newGroups[i].map((group) => {
-          let expression = "";
+      const essentialImplicants = findEssentialImplicants(
+        newGroups.flat(),
+        minterms
+      );
 
-          for (let j = 0; j < group.binary.length; j++) {
-            if (group.binary[j] === "1") {
-              expression += String.fromCharCode(65 + j);
-            }
+      console.log(essentialImplicants);
 
-            if (group.binary[j] === "0") {
-              expression += String.fromCharCode(65 + j) + "'";
-            }
+      let expression = [];
+      essentialImplicants.forEach((essential) => {
+        let essentialExpression = "";
+        for (let i = 0; i < essential.length; i++) {
+          if (essential[i] === "1") {
+            essentialExpression += String.fromCharCode(65 + i);
           }
 
-          return expression;
-        });
-        newGroups[i] = newGroups[i].join(" + ");
-      }
+          if (essential[i] === "0") {
+            essentialExpression += String.fromCharCode(65 + i) + "'";
+          }
+        }
+
+        expression.push(essentialExpression);
+      });
 
       console.log("SOLUTION:");
-      console.log(newGroups.join(" + "));
+      console.log(expression.join(" + "));
 
       read.close();
     });
