@@ -105,8 +105,28 @@ const group = (variables, minterms) => {
 
       const groups = group(variables, minterms);
       const newGroups = pairUp(groups);
-      console.log("-----------");
-      console.log(newGroups);
+
+      for (let i = 0; i < newGroups.length; i++) {
+        newGroups[i] = newGroups[i].map((group) => {
+          let expression = "";
+
+          for (let j = 0; j < group.binary.length; j++) {
+            if (group.binary[j] === "1") {
+              expression += String.fromCharCode(65 + j);
+            }
+
+            if (group.binary[j] === "0") {
+              expression += String.fromCharCode(65 + j) + "'";
+            }
+          }
+
+          return expression;
+        });
+        newGroups[i] = newGroups[i].join(" + ");
+      }
+
+      console.log("SOLUTION:");
+      console.log(newGroups.join(" + "));
 
       read.close();
     });
