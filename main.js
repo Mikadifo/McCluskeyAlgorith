@@ -1,35 +1,60 @@
 const { read, binary, getDifferentBit } = require("./util.js");
 
-const pairUp = (groups) => {
-  const newGroups = [];
-  //[ [{pair: "0,1", binary: "000-"}] ]
+const pairUp = (groups, lastGroups = []) => {
+  let newGroups = [];
 
   for (let i = 0; i < groups.length - 1; i++) {
     const pairGroups = [];
+
     for (let j = 0; j < groups[i].length; j++) {
       const pairs = [];
+
       for (let k = 0; k < groups[i + 1].length; k++) {
+        let groupObject = "";
+        let nextGroupObject = "";
+
+        if (Object.keys(groups[i][j]).includes("minterm")) {
+          groupObject = groups[i][j];
+          nextGroupObject = groups[i + 1][k];
+        } else {
+          groupObject = groups[i][j].min;
+          nextGroupObject = groups[i + 1][k].min;
+        }
+
         const bitPosition = getDifferentBit(
-          groups[i][j].min.binary,
-          groups[i + 1][k].min.binary
+          groupObject.binary,
+          nextGroupObject.binary
         );
 
         if (bitPosition !== null) {
-          pairObject = {
-            pair: groups[i][j].min.minterm + "," + groups[i + 1][k].min.minterm,
-            binary: groups[i][j].min.binary.replaceAt(bitPosition, "-"),
-          };
+          const pairBinary = groupObject.binary.replaceAt(bitPosition, "-");
 
-          pairs.push(pairObject);
+          if (
+            pairGroups.filter((pair) => pair.binary === pairBinary).length === 0
+          ) {
+            pairObject = {
+              minterm: groupObject.minterm + "," + nextGroupObject.minterm,
+              binary: pairBinary,
+            };
+
+            pairs.push(pairObject);
+          }
         }
       }
 
       pairGroups.push(...pairs);
     }
-    newGroups.push(pairGroups);
+
+    if (pairGroups.length > 0) {
+      newGroups.push(pairGroups);
+    }
   }
 
-  console.log(newGroups);
+  if (newGroups.length === 0) {
+    return lastGroups;
+  }
+
+  return pairUp(newGroups, newGroups);
 };
 
 const group = (variables, minterms) => {
@@ -79,7 +104,9 @@ const group = (variables, minterms) => {
       const minterms = mins.split(",");
 
       const groups = group(variables, minterms);
-      pairUp(groups);
+      const newGroups = pairUp(groups);
+      console.log("-----------");
+      console.log(newGroups);
 
       read.close();
     });
