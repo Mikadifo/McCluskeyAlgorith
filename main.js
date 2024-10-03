@@ -1,4 +1,3 @@
-const exp = require("constants");
 const { read, binary, getDifferentBit } = require("./util.js");
 
 const findEssentialImplicants = (groups, minterms) => {
@@ -17,52 +16,63 @@ const findEssentialImplicants = (groups, minterms) => {
   return essentials;
 };
 
-const pairUp = (groups, lastGroups = []) => {
+const pairUp = (groups, lastGroups = [], notTakenCare = []) => {
   console.log("PAIRS");
   console.log(JSON.stringify(groups, null, 2));
 
   let newGroups = [];
+  let notGrouped = [];
 
-  for (let i = 0; i < groups.length - 1; i++) {
+  //Iterates over each element (group of ones) but the last one
+  for (let i = 0; i < groups.length; i++) {
     const pairGroups = [];
 
+    //Iterates over each element/group's minterms
     for (let j = 0; j < groups[i].length; j++) {
-      const pairs = [];
+      if (i < groups.length - 1) {
+        const pairs = [];
 
-      for (let k = 0; k < groups[i + 1].length; k++) {
-        let groupObject = "";
-        let nextGroupObject = "";
+        //Iterates over the next element/group's array to check for the bit difference
+        for (let k = 0; k < groups[i + 1].length; k++) {
+          let groupObject = groups[i][j];
+          let nextGroupObject = groups[i + 1][k];
 
-        if (Object.keys(groups[i][j]).includes("minterm")) {
-          groupObject = groups[i][j];
-          nextGroupObject = groups[i + 1][k];
-        } else {
-          groupObject = groups[i][j].min;
-          nextGroupObject = groups[i + 1][k].min;
-        }
+          const bitPosition = getDifferentBit(
+            groupObject.binary,
+            nextGroupObject.binary
+          );
 
-        const bitPosition = getDifferentBit(
-          groupObject.binary,
-          nextGroupObject.binary
-        );
+          console.log(bitPosition, " <<<<<<< position differs");
 
-        if (bitPosition !== null) {
-          const pairBinary = groupObject.binary.replaceAt(bitPosition, "-");
+          if (bitPosition !== null) {
+            const pairBinary = groupObject.binary.replaceAt(bitPosition, "-");
 
-          if (
-            pairGroups.filter((pair) => pair.binary === pairBinary).length === 0
-          ) {
-            pairObject = {
-              minterm: groupObject.minterm + "," + nextGroupObject.minterm,
-              binary: pairBinary,
-            };
+            if (
+              pairGroups.filter((pair) => pair.binary === pairBinary).length ===
+              0
+            ) {
+              pairObject = {
+                minterm: groupObject.minterm + "," + nextGroupObject.minterm,
+                binary: pairBinary,
+              };
 
-            pairs.push(pairObject);
+              pairs.push(pairObject);
+            }
+
+            groups[i][j].takenCare = true;
+            groups[i + 1][k].takenCare = true;
           }
         }
+
+        pairGroups.push(...pairs);
       }
 
-      pairGroups.push(...pairs);
+      if (!groups[i][j].takenCare) {
+        notGrouped.push({
+          minterm: groups[i][j].minterm,
+          binary: groups[i][j].binary,
+        });
+      }
     }
 
     if (pairGroups.length > 0) {
@@ -70,11 +80,15 @@ const pairUp = (groups, lastGroups = []) => {
     }
   }
 
+  console.log(notGrouped, "NONTONTONTONTONTONTONTONTONTO");
+
   if (newGroups.length === 0) {
-    return lastGroups;
+    //TODO: add here the not taken care...
+    console.log(lastGroups, "LASTRTTTTTTTTTTTTTTTTTTTTTT");
+    return [...lastGroups.flat(), ...notTakenCare];
   }
 
-  return pairUp(newGroups, newGroups);
+  return pairUp(newGroups, newGroups, [...notTakenCare, ...notGrouped]);
 };
 
 const group = (variables, minterms) => {
@@ -96,7 +110,7 @@ const group = (variables, minterms) => {
 
     groups.push({
       ones,
-      min: mintermObject,
+      ...mintermObject,
     });
   }
 
@@ -126,10 +140,11 @@ const group = (variables, minterms) => {
       const groups = group(variables, minterms);
       const newGroups = pairUp(groups);
 
-      const essentialImplicants = findEssentialImplicants(
-        newGroups.flat(),
-        minterms
+      console.log(
+        newGroups,
+        "************** add not covered minterms before the implicants table *************"
       );
+      const essentialImplicants = findEssentialImplicants(newGroups, minterms);
 
       console.log(essentialImplicants);
 
