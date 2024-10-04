@@ -21,6 +21,31 @@ const getExpressionFromImplicants = (implicants) => {
   return expression.join(" + ");
 };
 
+const findRemainingImplicants = (groups, minterms) => {
+  const optimistic = groups.filter((group) =>
+    minterms.every((minterm) => group.minterm.split(",").includes(minterm))
+  );
+
+  if (optimistic.length >= 1) {
+    return [optimistic[0].binary];
+  }
+
+  const chosenImplicants = new Set();
+
+  for (let minterm of minterms) {
+    const implicants = groups.filter((group) =>
+      group.minterm.split(",").includes(minterm)
+    );
+
+    console.log("IMPLICANTS OF MINTERM ", minterm, ":");
+    console.log(implicants, "\n");
+
+    chosenImplicants.add(implicants[0]);
+  }
+
+  return chosenImplicants;
+};
+
 const findEssentialImplicants = (groups, minterms) => {
   const essentials = new Set();
   const usedMinterms = new Set();
@@ -43,6 +68,7 @@ const findEssentialImplicants = (groups, minterms) => {
   return {
     essentials,
     missingMinterms: minterms.filter((minterm) => !usedMinterms.has(minterm)),
+    missingGroups: groups.filter((group) => !essentials.has(group.binary)),
   };
 };
 
@@ -172,12 +198,24 @@ const group = (variables, minterms) => {
       const essentialsExpression = getExpressionFromImplicants(
         implicants.essentials
       );
-      //TODO: missing to choose the no essentials from the table
-      const remainingExpression = "";
-      console.log(implicants.missingMinterms);
+      let remainingExpression = "";
 
-      console.log("SOLUTION:");
-      console.log(essentialsExpression + " + " + remainingExpression);
+      if (implicants.missingMinterms.length >= 1) {
+        const remainingImplicants = findRemainingImplicants(
+          implicants.missingGroups,
+          implicants.missingMinterms
+        );
+        console.log(implicants.missingMinterms, "Missing Minterms");
+        console.log(implicants.missingGroups, "Missing Groups");
+
+        console.log(remainingImplicants, "Chosen non-essential Implicants");
+
+        remainingExpression =
+          " + " + getExpressionFromImplicants(remainingImplicants);
+      }
+
+      console.log("\nSOLUTION:");
+      console.log("F = " + essentialsExpression + remainingExpression);
 
       read.close();
     });
