@@ -1,19 +1,49 @@
 const { read, binary, getDifferentBit } = require("./util.js");
 
+const getExpressionFromImplicants = (implicants) => {
+  let expression = [];
+
+  implicants.forEach((implicant) => {
+    let essentialExpression = "";
+    for (let i = 0; i < implicant.length; i++) {
+      if (implicant[i] === "1") {
+        essentialExpression += String.fromCharCode(65 + i);
+      }
+
+      if (implicant[i] === "0") {
+        essentialExpression += String.fromCharCode(65 + i) + "'";
+      }
+    }
+
+    expression.push(essentialExpression);
+  });
+
+  return expression.join(" + ");
+};
+
 const findEssentialImplicants = (groups, minterms) => {
   const essentials = new Set();
+  const usedMinterms = new Set();
 
   for (let minterm of minterms) {
     const implicants = groups.filter((group) =>
-      group.minterm.includes(minterm)
+      group.minterm.split(",").includes(minterm)
     );
 
+    console.log("IMPLICANTS OF MINTERM ", minterm, ":");
+    console.log(implicants, "\n");
+
     if (implicants.length === 1) {
+      const mintermstoadd = implicants[0].minterm.split(",");
+      mintermstoadd.forEach((min) => usedMinterms.add(min));
       essentials.add(implicants[0].binary);
     }
   }
 
-  return essentials;
+  return {
+    essentials,
+    missingMinterms: minterms.filter((minterm) => !usedMinterms.has(minterm)),
+  };
 };
 
 const pairUp = (groups, lastGroups = [], notTakenCare = []) => {
@@ -41,8 +71,6 @@ const pairUp = (groups, lastGroups = [], notTakenCare = []) => {
             groupObject.binary,
             nextGroupObject.binary
           );
-
-          console.log(bitPosition, " <<<<<<< position differs");
 
           if (bitPosition !== null) {
             const pairBinary = groupObject.binary.replaceAt(bitPosition, "-");
@@ -80,11 +108,9 @@ const pairUp = (groups, lastGroups = [], notTakenCare = []) => {
     }
   }
 
-  console.log(notGrouped, "NONTONTONTONTONTONTONTONTONTO");
+  console.log(notGrouped, "NOT TAKEN CARE OF");
 
   if (newGroups.length === 0) {
-    //TODO: add here the not taken care...
-    console.log(lastGroups, "LASTRTTTTTTTTTTTTTTTTTTTTTT");
     return [...lastGroups.flat(), ...notTakenCare];
   }
 
@@ -140,32 +166,18 @@ const group = (variables, minterms) => {
       const groups = group(variables, minterms);
       const newGroups = pairUp(groups);
 
-      console.log(
-        newGroups,
-        "************** add not covered minterms before the implicants table *************"
+      console.log(newGroups, "FINAL GROUP\n");
+      const implicants = findEssentialImplicants(newGroups, minterms);
+      console.log(implicants.essentials, "ESSENTIALS");
+      const essentialsExpression = getExpressionFromImplicants(
+        implicants.essentials
       );
-      const essentialImplicants = findEssentialImplicants(newGroups, minterms);
-
-      console.log(essentialImplicants);
-
-      let expression = [];
-      essentialImplicants.forEach((essential) => {
-        let essentialExpression = "";
-        for (let i = 0; i < essential.length; i++) {
-          if (essential[i] === "1") {
-            essentialExpression += String.fromCharCode(65 + i);
-          }
-
-          if (essential[i] === "0") {
-            essentialExpression += String.fromCharCode(65 + i) + "'";
-          }
-        }
-
-        expression.push(essentialExpression);
-      });
+      //TODO: missing to choose the no essentials from the table
+      const remainingExpression = "";
+      console.log(implicants.missingMinterms);
 
       console.log("SOLUTION:");
-      console.log(expression.join(" + "));
+      console.log(essentialsExpression + " + " + remainingExpression);
 
       read.close();
     });
